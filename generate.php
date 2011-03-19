@@ -62,11 +62,25 @@ Zend_Db_Table::setDefaultAdapter($adapter);
 
 $tables = $adapter->listTables();
 
+printf('Found %d table(s)' . "\n", count($tables));
+
 foreach ($tables as $name)
 {
+    printf('Processing "%s"' . "\n", $name);
+
     $table = new Zend_Db_Table($name);
     $info = $parser->parse($table);
+/*
+    foreach ($info['primary'] as $key_name) {
+        $parameters[] = array('name' => $key_name);
+    }
 
+    $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
+        'name' => sprintf('count'),
+        'body' => sprintf('return $this->fetchRow($this->select()->from($this->_name, array(\'%s\', \'num\'=> \'COUNT(*)\'))->where(\'%s = ?\', $value))->num;', 0, 0),
+        'parameters' => $parameters
+    ));
+*/
     foreach ($info['uniques'] as $key)
     {
         $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
@@ -135,13 +149,20 @@ foreach ($tables as $name)
                         'visibility'    => 'protected',
                         'defaultValue'  => array_values($info['primary'])
                     ),
-
+/*
                     array (
                         'name'          => '_rowClass',
                         'visibility'    => 'protected',
                         'defaultValue'  => 'LS_Db_Table_Row_Abstract'
                     ),
-
+*/
+/*
+                    array (
+                        'name'          => '_rowsetClass',
+                        'visibility'    => 'protected',
+                        'defaultValue'  => 'LS_Db_Table_Row_Abstract'
+                    ),
+*/
                     array (
                         'name'          => '_referenceMap',
                         'visibility'    => 'protected',
@@ -160,5 +181,10 @@ foreach ($tables as $name)
         )
     ));
 
-    file_put_contents($opts->output. $parser->formatTableName($name) . '.php', $file->generate());
+    // try to make the directory
+    if (!is_dir($opts->output)) {
+        mkdir($opts->output);
+    }
+
+    file_put_contents($opts->output . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php', $file->generate());
 }

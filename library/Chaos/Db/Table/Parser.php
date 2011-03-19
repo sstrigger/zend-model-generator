@@ -91,11 +91,11 @@ class Chaos_Db_Table_Parser
 
         if (empty($prefix))
         {
-            return sprintf('Model_%s', $this->formatTableName($name));
+            return sprintf('%s', $this->formatTableName($name));
         }
         else
         {
-            return sprintf('%s_Model_%s', $prefix, $this->formatTableName($name));
+            return sprintf('%s_%s', $prefix, $this->formatTableName($name));
         }
     }
 
