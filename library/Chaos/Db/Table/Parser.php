@@ -53,7 +53,7 @@ class Chaos_Db_Table_Parser
 
                 $info['referenceMap'][$tmp['key']] = array(
                     'columns' => $tmp['column'],
-                    'refTableClass' => $this->formatClassName($tmp['fk_table']),
+                    'refTableClass' => $this->formatDbTableClassName($tmp['fk_table']),
                     'refColumns' => $tmp['fk_column']
                 );
 
@@ -85,7 +85,35 @@ class Chaos_Db_Table_Parser
         return str_replace('_','', mb_convert_case($name, MB_CASE_TITLE));
     }
 
-    public function formatClassName($name)
+    public function formatRowClassName($name)
+    {
+        $prefix = $this->getPrefix();
+
+        if (empty($prefix))
+        {
+            return sprintf('DbTable_Row_%s', $this->formatTableName($name));
+        }
+        else
+        {
+            return sprintf('%s_DbTable_Row_%s', $prefix, $this->formatTableName($name));
+        }
+    }
+
+    public function formatRowsetClassName($name)
+    {
+        $prefix = $this->getPrefix();
+
+        if (empty($prefix))
+        {
+            return sprintf('DbTable_Rowset_%s', $this->formatTableName($name));
+        }
+        else
+        {
+            return sprintf('%s_DbTable_Rowset_%s', $prefix, $this->formatTableName($name));
+        }
+    }
+
+    public function formatModelClassName($name)
     {
         $prefix = $this->getPrefix();
 
@@ -96,6 +124,20 @@ class Chaos_Db_Table_Parser
         else
         {
             return sprintf('%s_%s', $prefix, $this->formatTableName($name));
+        }
+    }
+
+    public function formatDbTableClassName($name)
+    {
+        $prefix = $this->getPrefix();
+
+        if (empty($prefix))
+        {
+            return sprintf('DbTable_%s', $this->formatTableName($name));
+        }
+        else
+        {
+            return sprintf('%s_DbTable_%s', $prefix, $this->formatTableName($name));
         }
     }
 

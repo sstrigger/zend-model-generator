@@ -21,6 +21,8 @@ try
         'ignore|i-s'    => 'ignore option, optional string parameter',
         'output|o=s'    => 'output directory option, required string parameter',
         'prefix-s'      => 'prefix option, optional string parameter',
+        'rowclass-s'    => 'prefix option, optional string parameter',
+        'rowsetclass-s' => 'prefix option, optional string parameter',
         'verbose|v'     => 'Print verbose output',
         'help'          => 'help option'
     ));
@@ -43,10 +45,22 @@ if (!isset($opts->port))
     $opts->port = 3306;
 }
 
+if (!isset($opts->rowclass))
+{
+    $opts->rowclass = 'Zend_Db_Table_Row_Abstract';
+}
+
+if (!isset($opts->rowsetclass))
+{
+    $opts->rowsetclass = 'Zend_Db_Table_Rowset_Abstract';
+}
+
 if (!isset($opts->ignore))
 {
     $ignore = array();
-} else {
+}
+else
+{
     $ignore = explode(' ', $opts->ignore);
 }
 
@@ -91,11 +105,45 @@ foreach ($tables as $name)
             'parameters' => $parameters
         ));
     */
+
+        $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
+            'name' => 'findAll',
+            'body' => 'return $this->fetchAll($where, $order, $count, $offset);',
+            'parameters' => array(
+                array(
+                    'name' => 'where',
+                    'defaultValue' => null
+                ),
+                array(
+                    'name' => 'order',
+                    'defaultValue' => null
+                ),
+                array(
+                    'name' => 'count',
+                    'defaultValue' => null
+                ),
+                array(
+                    'name' => 'offset',
+                    'defaultValue' => null
+                ),
+            ),
+        ));
+
+        $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
+            'name' => 'findById',
+            'body' => 'return $this->find($id)->current();',
+            'parameters' => array(
+                array(
+                    'name' => 'id'
+                ),
+            ),
+        ));
+
         foreach ($info['uniques'] as $key)
         {
             $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
                 'name' => sprintf('findBy%s', $parser->formatMethodName($key)),
-                'body' => sprintf('return $this->fetchAll($this->select()->where(\'%s = ?\', $value));', $key),
+                'body' => sprintf('return $this->fetchAll($this->getAdapter()->quoteInto(\'%s = ?\', $value));', $key),
                 'parameters' => array(
                     array(
                         'name' => 'value'
@@ -118,7 +166,7 @@ foreach ($tables as $name)
         {
             $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
                 'name' => sprintf('find%s', $parser->formatMethodName($table)),
-                'body' => sprintf('return $this->findParentRow(new %s(), null, $select);', $parser->formatClassName($table)),
+                'body' => sprintf('return $this->findParentRow(new %s(), null, $select);', $parser->formatDbTableClassName($table)),
                 'parameters' => array(
                     array(
                         'name' => 'select',
@@ -132,7 +180,7 @@ foreach ($tables as $name)
         {
             $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
                 'name' => sprintf('find%s', $parser->formatMethodName($table)),
-                'body' => sprintf('return $this->findDependentRowset(new %s(), null, $select);', $parser->formatClassName($table)),
+                'body' => sprintf('return $this->findDependentRowset(new %s(), null, $select);', $parser->formatDbTableClassName($table)),
                 'parameters' => array(
                     array(
                         'name' => 'select',
@@ -142,10 +190,37 @@ foreach ($tables as $name)
             ));
         }
 
-        $file = new Zend_CodeGenerator_Php_File(array(
+        $row = new Zend_CodeGenerator_Php_File(array(
             'classes' => array(
                 new Zend_CodeGenerator_Php_Class(array(
-                    'name' => $parser->formatClassName($name),
+                    'name' => $parser->formatRowClassName($name),
+                    'extendedClass' => $opts->rowclass
+                ))
+            )
+        ));
+
+        $rowset = new Zend_CodeGenerator_Php_File(array(
+            'classes' => array(
+                new Zend_CodeGenerator_Php_Class(array(
+                    'name' => $parser->formatRowSetClassName($name),
+                    'extendedClass' => $opts->rowsetclass
+                ))
+            )
+        ));
+
+        $model = new Zend_CodeGenerator_Php_File(array(
+            'classes' => array(
+                new Zend_CodeGenerator_Php_Class(array(
+                    'name' => $parser->formatModelClassName($name),
+                    'extendedClass' => $parser->formatDbTableClassName($name)
+                ))
+            )
+        ));
+
+        $dbtable = new Zend_CodeGenerator_Php_File(array(
+            'classes' => array(
+                new Zend_CodeGenerator_Php_Class(array(
+                    'name' => $parser->formatDbTableClassName($name),
                     'methods' => $info['methods'],
                     'properties' => array(
                         array (
@@ -159,20 +234,18 @@ foreach ($tables as $name)
                             'visibility'    => 'protected',
                             'defaultValue'  => array_values($info['primary'])
                         ),
-    /*
+
                         array (
                             'name'          => '_rowClass',
                             'visibility'    => 'protected',
-                            'defaultValue'  => 'LS_Db_Table_Row_Abstract'
+                            'defaultValue'  => $parser->formatRowClassName($name)
                         ),
-    */
-    /*
+
                         array (
                             'name'          => '_rowsetClass',
                             'visibility'    => 'protected',
-                            'defaultValue'  => 'LS_Db_Table_Row_Abstract'
+                            'defaultValue'  => $parser->formatRowsetClassName($name)
                         ),
-    */
                         array (
                             'name'          => '_referenceMap',
                             'visibility'    => 'protected',
@@ -196,6 +269,24 @@ foreach ($tables as $name)
             mkdir($opts->output);
         }
 
-        file_put_contents($opts->output . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php', $file->generate());
+        if (!is_dir($opts->output . DIRECTORY_SEPARATOR . 'DbTable')) {
+            mkdir($opts->output . DIRECTORY_SEPARATOR . 'DbTable');
+        }
+
+        if (!is_dir($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Row')) {
+            mkdir($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Row');
+        }
+
+        if (!is_dir($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Rowset')) {
+            mkdir($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Rowset');
+        }
+
+        file_put_contents($opts->output . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php', $model->generate());
+
+        file_put_contents($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php', $dbtable->generate());
+
+        file_put_contents($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Row' . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php', $row->generate());
+
+        file_put_contents($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Rowset' . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php', $rowset->generate());
     }
 }
