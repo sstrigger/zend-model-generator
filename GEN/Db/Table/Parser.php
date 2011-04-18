@@ -1,6 +1,6 @@
 <?php
 
-class Chaos_Db_Table_Parser
+class GEN_Db_Table_Parser
 {
     private $_prefix = null;
 

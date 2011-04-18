@@ -7,7 +7,7 @@ set_include_path(implode(PATH_SEPARATOR, array(
 require_once 'Zend/Loader/Autoloader.php';
 
 $autoloader = Zend_Loader_Autoloader::getInstance();
-$autoloader->registerNamespace('Chaos_');
+$autoloader->registerNamespace('GEN_');
 
 // Setup the CLI Commands
 try
@@ -70,7 +70,7 @@ else
     $ignore = explode(' ', $opts->ignore);
 }
 
-$parser = new Chaos_Db_Table_Parser();
+$parser = new GEN_Db_Table_Parser();
 
 if (isset($opts->prefix))
 {
