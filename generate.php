@@ -13,18 +13,19 @@ $autoloader->registerNamespace('Chaos_');
 try
 {
     $opts = new Zend_Console_Getopt(array(
-        'host|h=s'      => 'host option, required string parameter',
-        'port|p-i'      => 'port option, optional integer parameter',
-        'database|d=s'  => 'database option, required word parameter',
-        'username|u=s'  => 'username option, required string parameter',
-        'password|P-s'  => 'password option, optional string parameter',
-        'ignore|i-s'    => 'ignore option, optional string parameter',
-        'output|o=s'    => 'output directory option, required string parameter',
-        'prefix-s'      => 'prefix option, optional string parameter',
-        'rowclass-s'    => 'prefix option, optional string parameter',
-        'rowsetclass-s' => 'prefix option, optional string parameter',
+        'host|h=s'      => 'Databse Host, required string parameter',
+        'port|p-i'      => 'Database Port, optional integer parameter',
+        'database|d=s'  => 'Database Name, required word parameter',
+        'username|u=s'  => 'Username, required string parameter',
+        'password|P-s'  => 'Password, optional string parameter',
+        'ignore|i-s'    => 'Ignore (space separated list of tables), optional string parameter',
+        'output|o=s'    => 'Output Directory, required string parameter',
+        'prefix-s'      => 'Model Prefix, optional string parameter',
+        'tableclass-s'  => 'Table Class Name (replaces Zend_Db_Table_Abstract), optional string parameter',
+        'rowclass-s'    => 'Row Class Name (replaces Zend_Db_Table_Row_Abstract), optional string parameter',
+        'rowsetclass-s' => 'Rowset Class Name (Zend_Db_Table_Rowset_Abstract), optional string parameter',
         'verbose|v'     => 'Print verbose output',
-        'help'          => 'help option'
+        'help'          => 'Help'
     ));
 
     $opts->parse();
@@ -43,6 +44,11 @@ if (isset($opts->help) or !isset($opts->host, $opts->database, $opts->username, 
 if (!isset($opts->port))
 {
     $opts->port = 3306;
+}
+
+if (!isset($opts->tableclass))
+{
+    $opts->tableclass = 'Zend_Db_Table_Abstract';
 }
 
 if (!isset($opts->rowclass))
@@ -259,7 +265,7 @@ foreach ($tables as $name)
                         ),
                     ),
 
-                    'extendedClass' => 'Zend_Db_Table_Abstract'
+                    'extendedClass' => $opts->tableclass
                 )),
             )
         ));
