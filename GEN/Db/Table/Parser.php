@@ -53,7 +53,7 @@ class GEN_Db_Table_Parser
 
                 $info['referenceMap'][$tmp['key']] = array(
                     'columns' => $tmp['column'],
-                    'refTableClass' => $this->formatDbTableClassName($tmp['fk_table']),
+                    'refTableClass' => $this->formatModelClassName($tmp['fk_table']),
                     'refColumns' => $tmp['fk_column']
                 );
 

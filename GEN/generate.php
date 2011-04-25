@@ -1,6 +1,6 @@
 <?php
 set_include_path(implode(PATH_SEPARATOR, array(
-    realpath(dirname(__FILE__) . '/library'),
+    realpath(dirname(__FILE__) . '/../'),
     get_include_path()
 )));
 
@@ -19,6 +19,7 @@ try
         'username|u=s'  => 'Username, required string parameter',
         'password|P-s'  => 'Password, optional string parameter',
         'ignore|i-s'    => 'Ignore (space separated list of tables), optional string parameter',
+        'limit|l-s'     => 'Limit (space separated list of tables), optional string parameter',
         'output|o=s'    => 'Output Directory, required string parameter',
         'prefix-s'      => 'Model Prefix, optional string parameter',
         'tableclass-s'  => 'Table Class Name (replaces Zend_Db_Table_Abstract), optional string parameter',
@@ -70,6 +71,15 @@ else
     $ignore = explode(' ', $opts->ignore);
 }
 
+if (!isset($opts->limit))
+{
+    $limit = '*';
+}
+else
+{
+    $limit = explode(' ', $opts->limit);
+}
+
 $parser = new GEN_Db_Table_Parser();
 
 if (isset($opts->prefix))
@@ -94,7 +104,7 @@ printf('Found %d table(s)' . "\n", count($tables));
 
 foreach ($tables as $name)
 {
-    if (!in_array($name, $ignore))
+    if (!in_array($name, $ignore) and ($limit == '*' or in_array($name, $limit)))
     {
         printf('Processing "%s"' . "\n", $name);
 
@@ -159,7 +169,7 @@ foreach ($tables as $name)
 
             $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
                 'name' => sprintf('countBy%s', $parser->formatMethodName($key)),
-                'body' => sprintf('return $this->fetchRow($this->select()->from($this->_name, array(\'%s\', \'num\'=> \'COUNT(*)\'))->where(\'%s = ?\', $value))->num;', $key, $key),
+                'body' => sprintf('return $this->fetchRow($this->select()->from($this->_name, array("%s", "num"=> "COUNT(*)"))->where("%s = ?", $value))->num;', implode('","', $info['primary']), $key),
                 'parameters' => array(
                     array(
                         'name' => 'value'
