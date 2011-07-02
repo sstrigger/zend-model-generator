@@ -146,11 +146,11 @@ foreach ($tables as $name)
         ));
 
         $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
-            'name' => 'findById',
-            'body' => 'return $this->find($id)->current();',
+            'name' => 'findRow',
+            'body' => 'return $this->find($key)->current();',
             'parameters' => array(
                 array(
-                    'name' => 'id'
+                    'name' => 'key'
                 ),
             ),
         ));
@@ -169,7 +169,7 @@ foreach ($tables as $name)
 
             $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
                 'name' => sprintf('countBy%s', $parser->formatMethodName($key)),
-                'body' => sprintf('return $this->fetchRow($this->select()->from($this->_name, array("%s", "num"=> "COUNT(*)"))->where("%s = ?", $value))->num;', implode('","', $info['primary']), $key),
+                'body' => sprintf('return $this->fetchRow($this->select()->from($this->_name, array(\'%s\', \'num\'=> \'COUNT(*)\'))->where(\'%s = ?\', $value))->num;', implode('","', $info['primary']), $key),
                 'parameters' => array(
                     array(
                         'name' => 'value'
