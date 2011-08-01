@@ -297,7 +297,16 @@ foreach ($tables as $name)
             mkdir($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Rowset');
         }
 
-        file_put_contents($opts->output . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php', $model->generate());
+        $file_name = $opts->output . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php';
+
+        if (is_file($file_name))
+        {
+            printf('File exists %s' . "\n", $file_name);
+        }
+        else
+        {
+            file_put_contents($file_name, $model->generate());
+        }
 
         file_put_contents($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php', $dbtable->generate());
 
