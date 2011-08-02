@@ -10,8 +10,7 @@ $autoloader = Zend_Loader_Autoloader::getInstance();
 $autoloader->registerNamespace('GEN_');
 
 // Setup the CLI Commands
-try
-{
+try {
     $opts = new Zend_Console_Getopt(array(
         'host|h=s'      => 'Databse Host, required string parameter',
         'port|p-i'      => 'Database Port, optional integer parameter',
@@ -25,14 +24,13 @@ try
         'tableclass-s'  => 'Table Class Name (replaces Zend_Db_Table_Abstract), optional string parameter',
         'rowclass-s'    => 'Row Class Name (replaces Zend_Db_Table_Row_Abstract), optional string parameter',
         'rowsetclass-s' => 'Rowset Class Name (Zend_Db_Table_Rowset_Abstract), optional string parameter',
+        'overwrite-s'   => 'Overwrite Flag, optional string parameter',
         'verbose|v'     => 'Print verbose output',
         'help'          => 'Help'
     ));
 
     $opts->parse();
-}
-catch (Zend_Console_Getopt_Exception $e)
-{
+} catch (Zend_Console_Getopt_Exception $e) {
     exit($e->getMessage() ."\n\n". $e->getUsageMessage());
 }
 
@@ -42,48 +40,43 @@ if (isset($opts->help) or !isset($opts->host, $opts->database, $opts->username, 
     exit;
 }
 
-if (!isset($opts->port))
-{
+if (!isset($opts->overwrite)) {
+    $opts->overwrite = false;
+} else {
+    $opts->overwrite = true;
+}
+
+if (!isset($opts->port)) {
     $opts->port = 3306;
 }
 
-if (!isset($opts->tableclass))
-{
+if (!isset($opts->tableclass)) {
     $opts->tableclass = 'Zend_Db_Table_Abstract';
 }
 
-if (!isset($opts->rowclass))
-{
+if (!isset($opts->rowclass)) {
     $opts->rowclass = 'Zend_Db_Table_Row_Abstract';
 }
 
-if (!isset($opts->rowsetclass))
-{
+if (!isset($opts->rowsetclass)) {
     $opts->rowsetclass = 'Zend_Db_Table_Rowset_Abstract';
 }
 
-if (!isset($opts->ignore))
-{
+if (!isset($opts->ignore)) {
     $ignore = array();
-}
-else
-{
+} else {
     $ignore = explode(' ', $opts->ignore);
 }
 
-if (!isset($opts->limit))
-{
+if (!isset($opts->limit)) {
     $limit = '*';
-}
-else
-{
+} else {
     $limit = explode(' ', $opts->limit);
 }
 
 $parser = new GEN_Db_Table_Parser();
 
-if (isset($opts->prefix))
-{
+if (isset($opts->prefix)) {
     $parser->setPrefix($opts->prefix);
 }
 
@@ -297,21 +290,31 @@ foreach ($tables as $name)
             mkdir($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Rowset');
         }
 
-        $file_name = $opts->output . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php';
+        $model_file_name = $opts->output . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php';
 
-        if (is_file($file_name))
-        {
-            printf('File exists %s' . "\n", $file_name);
-        }
-        else
-        {
-            file_put_contents($file_name, $model->generate());
+        if (is_file($model_file_name) && !$opts->overwrite) {
+            printf('File exists %s' . "\n", $model_file_name);
+        } else {
+            file_put_contents($model_file_name, $model->generate());
         }
 
+        // always create dbtable files
         file_put_contents($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php', $dbtable->generate());
 
-        file_put_contents($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Row' . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php', $row->generate());
+        $row_file_name = $opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Row' . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php';
 
-        file_put_contents($opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Rowset' . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php', $rowset->generate());
+        if (is_file($row_file_name) && !$opts->overwrite) {
+            printf('File exists %s' . "\n", $row_file_name);
+        } else {
+            file_put_contents($row_file_name, $row->generate());
+        }
+
+        $rowset_file_name = $opts->output . DIRECTORY_SEPARATOR . 'DbTable' . DIRECTORY_SEPARATOR . 'Rowset' . DIRECTORY_SEPARATOR . $parser->formatTableName($name) . '.php';
+
+        if (is_file($rowset_file_name) && !$opts->overwrite) {
+            printf('File exists %s' . "\n", $rowset_file_name);
+        } else {
+            file_put_contents($rowset_file_name, $rowset->generate());
+        }
     }
 }
