@@ -134,7 +134,7 @@ foreach ($tables as $name)
                 array(
                     'name' => 'offset',
                     'defaultValue' => null
-                ),
+                )
             ),
         ));
 
@@ -152,11 +152,23 @@ foreach ($tables as $name)
         {
             $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
                 'name' => sprintf('findBy%s', $parser->formatMethodName($key)),
-                'body' => sprintf('return $this->fetchAll($this->getAdapter()->quoteInto(\'%s = ?\', $value));', $key),
+                'body' => sprintf('return $this->fetchAll($this->getAdapter()->quoteInto(\'%s = ?\', $value), $order, $count, $offset);', $key),
                 'parameters' => array(
                     array(
                         'name' => 'value'
                     ),
+                    array(
+                    'name' => 'order',
+                    'defaultValue' => null
+                    ),
+                    array(
+                        'name' => 'count',
+                        'defaultValue' => null
+                    ),
+                    array(
+                        'name' => 'offset',
+                        'defaultValue' => null
+                    )
                 ),
             ));
 
