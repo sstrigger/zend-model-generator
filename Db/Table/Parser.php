@@ -12,60 +12,41 @@ class GEN_Db_Table_Parser
     {
         $info = $table->info();
 
-        $info['uniques'] = array();
+        $info['indexes'] = array();
         $info['parents'] = array();
         $info['dependants'] = array();
 
         $adapter = $table->getAdapter();
 
-        foreach ($info['metadata'] as $property => $details)
+        // find indexes
+        $indexes = $adapter->fetchAll(sprintf('SHOW INDEXES FROM `%s` where Non_unique = 0', $info['name']));
+
+        foreach ($indexes as $index)
         {
-            // match php types
-            $info['phptypes'][$property] = $this->convertMysqlTypeToPhp($details['DATA_TYPE']);
-
-            // find uniques
-            $tmp = $adapter->fetchRow('DESCRIBE `'.$info['name'].'` `'.$property.'`;');
-
-            if (!empty($tmp['Key']))
-            {
-                $info['uniques'][$property] = $property;
-            }
+            $info['indexes'][$index['Column_name']] = $index['Column_name'];
         }
 
-        // get foreign keys
-        $result = $adapter->fetchAll('SHOW CREATE TABLE `' . $info['name'].'`');
-        $query = $result[0]['Create Table'];
-        $lines = explode("\n", $query);
-        $tblinfo = array();
-        $keys = array();
+        // get outgoing references
+        $references = $adapter->fetchAll(sprintf('SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_NAME = "%s" AND REFERENCED_TABLE_NAME IS NOT NULL', $info['name']));
 
-        foreach ($lines as $line) {
-            preg_match('/^\s*CONSTRAINT `(\w+)` FOREIGN KEY \(`(\w+)`\) REFERENCES `(\w+)` \(`(\w+)`\)/', $line, $tblinfo);
+        foreach ($references as $reference) {
+            $info['referenceMap'][$reference['CONSTRAINT_NAME']] = array(
+                'columns' => $reference['COLUMN_NAME'],
+                'refTableClass' => $this->formatModelClassName($reference['REFERENCED_TABLE_NAME']),
+                'refColumns' => $reference['REFERENCED_COLUMN_NAME']
+            );
 
-            if (sizeof($tblinfo) > 0)
-            {
-                $keys[] = $tmp = array(
-                    'key'       => $tblinfo[1],
-                    'column'    => $tblinfo[2],
-                    'fk_table'  => $tblinfo[3],
-                    'fk_column' => $tblinfo[4]
-                );
-
-                $info['referenceMap'][$tmp['key']] = array(
-                    'columns' => $tmp['column'],
-                    'refTableClass' => $this->formatModelClassName($tmp['fk_table']),
-                    'refColumns' => $tmp['fk_column']
-                );
-
-                $info['parents'][$tmp['fk_table']] = $tmp['key'];
-
-/*
-                $info['dependentTables']
-*/
-            }
+            $info['parents'][$reference['REFERENCED_TABLE_NAME']] = $reference['CONSTRAINT_NAME'];
         }
 
-        $info['foreign_keys'] = $keys;
+        unset($references);
+
+        // get incoming references
+        $references = $adapter->fetchAll(sprintf('SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_NAME = "%s"', $info['name']));
+
+        foreach ($references as $reference) {
+            $info['dependentTables'][] = $this->formatModelClassName($reference['TABLE_NAME']);
+        }
 
         return $info;
     }
@@ -145,29 +126,4 @@ class GEN_Db_Table_Parser
     {
         return str_replace('_','', mb_convert_case($string, MB_CASE_TITLE));
     }
-
-    /**
-     * map mysql data types to php data types
-     * @param string $mysqlType
-     * @return string
-     */
-    protected function convertMysqlTypeToPhp($mysqlType)
-    {
-
-        $type = 'string';
-
-        // integers
-        if (preg_match('#^(.*)int(.*)$#', $mysqlType))
-        {
-            $type = 'int';
-        }
-
-        if (preg_match('#^(.*)float(.*)$#', $mysqlType))
-        {
-            $type = 'float';
-        }
-
-        return $type;
-    }
-
 }

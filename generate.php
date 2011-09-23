@@ -103,17 +103,6 @@ foreach ($tables as $name)
 
         $table = new Zend_Db_Table($name);
         $info = $parser->parse($table);
-    /*
-        foreach ($info['primary'] as $key_name) {
-            $parameters[] = array('name' => $key_name);
-        }
-
-        $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
-            'name' => sprintf('count'),
-            'body' => sprintf('return $this->fetchRow($this->select()->from($this->_name, array(\'%s\', \'num\'=> \'COUNT(*)\'))->where(\'%s = ?\', $value))->num;', 0, 0),
-            'parameters' => $parameters
-        ));
-    */
 
         $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
             'name' => 'findAll',
@@ -148,7 +137,7 @@ foreach ($tables as $name)
             ),
         ));
 
-        foreach ($info['uniques'] as $key)
+        foreach ($info['indexes'] as $key)
         {
             $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
                 'name' => sprintf('findBy%s', $parser->formatMethodName($key)),
@@ -255,7 +244,19 @@ foreach ($tables as $name)
                             'visibility'    => 'protected',
                             'defaultValue'  => array_values($info['primary'])
                         ),
-
+/*
+ * should only do this, if we can pre populat ALL DbTable values
+                        array (
+                            'name'          => '_cols',
+                            'visibility'    => 'protected',
+                            'defaultValue'  => array_values($info['cols'])
+                        ),
+                        array (
+                            'name'          => '_defaultValues',
+                            'visibility'    => 'protected',
+                            'defaultValue'  => array()
+                        ),
+*/
                         array (
                             'name'          => '_rowClass',
                             'visibility'    => 'protected',
@@ -276,7 +277,7 @@ foreach ($tables as $name)
                         array (
                             'name'          => '_dependentTables',
                             'visibility'    => 'protected',
-                            'defaultValue'  => array()
+                            'defaultValue'  => $info['dependentTables']
                         ),
                     ),
 
