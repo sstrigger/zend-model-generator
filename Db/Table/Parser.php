@@ -28,7 +28,7 @@ class GEN_Db_Table_Parser
         }
 
         // find indexes
-        $indexes = $adapter->fetchAll(sprintf('SHOW INDEXES FROM `%s` WHERE Non_unique = 0', $table));
+        $indexes = $adapter->fetchAll(sprintf('SHOW INDEXES FROM `%s`', $table));
 
         foreach ($indexes as $index)
         {
