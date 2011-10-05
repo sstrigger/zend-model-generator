@@ -8,18 +8,27 @@ class GEN_Db_Table_Parser
     {
     }
 
-    public function parse(Zend_Db_Table_Abstract $table)
+    public function parse($table)
     {
-        $info = $table->info();
+        $adapter = Zend_Db_Table::getDefaultAdapter();
 
+        $info['primary'] = array();
         $info['indexes'] = array();
         $info['parents'] = array();
         $info['dependants'] = array();
+        $info['referenceMap'] = array();
+        $info['dependentTables'] = array();
 
-        $adapter = $table->getAdapter();
+        // find primary keys
+        $indexes = $adapter->fetchAll(sprintf('SHOW INDEXES FROM `%s` WHERE Key_name = "PRIMARY"', $table));
+
+        foreach ($indexes as $index)
+        {
+            $info['primary'][] = $index['Column_name'];
+        }
 
         // find indexes
-        $indexes = $adapter->fetchAll(sprintf('SHOW INDEXES FROM `%s` where Non_unique = 0', $info['name']));
+        $indexes = $adapter->fetchAll(sprintf('SHOW INDEXES FROM `%s` WHERE Non_unique = 0', $table));
 
         foreach ($indexes as $index)
         {
@@ -27,7 +36,7 @@ class GEN_Db_Table_Parser
         }
 
         // get outgoing references
-        $references = $adapter->fetchAll(sprintf('SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_NAME = "%s" AND REFERENCED_TABLE_NAME IS NOT NULL', $info['name']));
+        $references = $adapter->fetchAll(sprintf('SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_NAME = "%s" AND REFERENCED_TABLE_NAME IS NOT NULL', $table));
 
         foreach ($references as $reference) {
             $info['referenceMap'][$reference['CONSTRAINT_NAME']] = array(
@@ -42,7 +51,7 @@ class GEN_Db_Table_Parser
         unset($references);
 
         // get incoming references
-        $references = $adapter->fetchAll(sprintf('SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_NAME = "%s"', $info['name']));
+        $references = $adapter->fetchAll(sprintf('SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_NAME = "%s"', $table));
 
         foreach ($references as $reference) {
             $info['dependentTables'][] = $this->formatModelClassName($reference['TABLE_NAME']);
