@@ -243,13 +243,20 @@ foreach ($tables as $name)
                             'visibility'    => 'protected',
                             'defaultValue'  => array_values($info['primary'])
                         ),
-/*
- * should only do this, if we can pre populat ALL DbTable values
+
+                        array (
+                            'name'          => '_metadata',
+                            'visibility'    => 'protected',
+                            'defaultValue'  => $info['metadata']
+                        ),
+
                         array (
                             'name'          => '_cols',
                             'visibility'    => 'protected',
-                            'defaultValue'  => array_values($info['cols'])
+                            'defaultValue'  => array_keys($info['metadata'])
                         ),
+
+/*
                         array (
                             'name'          => '_defaultValues',
                             'visibility'    => 'protected',

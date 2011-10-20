@@ -18,6 +18,7 @@ class GEN_Db_Table_Parser
         $info['dependants'] = array();
         $info['referenceMap'] = array();
         $info['dependentTables'] = array();
+        $info['metadata'] = $adapter->describeTable($table, $schema);
 
         // find primary keys
         $indexes = $adapter->fetchAll(sprintf('SHOW INDEXES FROM `%s` WHERE Key_name = "PRIMARY"', $table));
