@@ -101,7 +101,7 @@ foreach ($tables as $name)
     {
         printf('Processing "%s"' . "\n", $name);
 
-        $info = $parser->parse($name);
+        $info = $parser->parse($name, $opts->database);
 
         $info['methods'][] = new Zend_CodeGenerator_Php_Method(array(
             'name' => 'findAll',
