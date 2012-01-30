@@ -18,6 +18,7 @@ try {
         'username|u=s'  => 'Username, required string parameter',
         'password|P-s'  => 'Password, optional string parameter',
         'ignore|i-s'    => 'Ignore (space separated list of tables), optional string parameter',
+        'ignoreviews|x' => 'Ignore views',
         'limit|l-s'     => 'Limit (space separated list of tables), optional string parameter',
         'output|o=s'    => 'Output Directory, required string parameter',
         'prefix-s'      => 'Model Prefix, optional string parameter',
@@ -91,7 +92,11 @@ $adapter = new Zend_Db_Adapter_Pdo_Mysql(array(
 
 Zend_Db_Table::setDefaultAdapter($adapter);
 
-$tables = $adapter->listTables();
+if (!isset($opts->ignoreviews)) {
+	$tables = $adapter->listTables();
+} else {
+	$tables = $adapter->fetchCol('SHOW FULL TABLES WHERE table_type != "VIEW"');
+}
 
 printf('Found %d table(s)' . "\n", count($tables));
 
