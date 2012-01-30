@@ -73,7 +73,7 @@ class GEN_Db_Table_Parser
 
     public function formatTableName($name)
     {
-        return str_replace('_','', mb_convert_case($name, MB_CASE_TITLE));
+        return str_replace('_','', ucfirst($name));
     }
 
     public function formatRowClassName($name)
