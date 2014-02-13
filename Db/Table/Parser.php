@@ -8,7 +8,7 @@ class GEN_Db_Table_Parser
     {
     }
 
-    public function parse($table, $schema)
+    public function parse($table, $schema, $tables)
     {
         $adapter = Zend_Db_Table::getDefaultAdapter();
 
@@ -40,6 +40,10 @@ class GEN_Db_Table_Parser
         $references = $adapter->fetchAll(sprintf('SELECT * FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE CONSTRAINT_SCHEMA = "%s" AND TABLE_NAME = "%s" AND REFERENCED_TABLE_NAME IS NOT NULL', $schema, $table));
 
         foreach ($references as $reference) {
+            $referenced_table_names = preg_grep('/^'.$reference['REFERENCED_TABLE_NAME'].'$/i',$tables);
+            if (count($referenced_table_names)==1) {
+                $reference['REFERENCED_TABLE_NAME'] = current($referenced_table_names);
+            }
             $info['referenceMap'][$reference['CONSTRAINT_NAME']] = array(
                 'columns' => $reference['COLUMN_NAME'],
                 'refTableClass' => $this->formatModelClassName($reference['REFERENCED_TABLE_NAME']),
